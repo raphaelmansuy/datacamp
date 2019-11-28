@@ -14,7 +14,7 @@ An unsupervised learning process is a process for a set of unlabeled data, an al
 
 ### classification
 
-In a classification problem the target value to predict is discrete value.
+In a classification problem the target value to predict is a discrete value.
 
 ### regression 
 
@@ -538,3 +538,321 @@ for alpha in alpha_space:
 # Display the plot
 display_plot(ridge_scores, ridge_scores_std)
 ```
+
+## Model performance
+
+Acuracy is not always the best metric to mesure the effiency of a model, for example if class imbalance is observed
+
+Example: for Spam 99% of email are correct and 1% of email are spam. A classifier that classifies all email as correct has an acuracy of 99%, but fail to be useful for spam qualification.
+
+### Diagnosis classification with confusion matrix
+
+
+|                   | Predicted Spam Email   |  Predicted Real Email |
+|-------------------|------------------------|-----------------------|
+| Actual Spam Email | True Positive          | False negative        |
+| Actual Real Email | False Positive         | True negative         |
+
+
+$$ Acuracy = \frac{t_p + t_n}{t_p + t_n + f_p + f_n}$$
+
+$$ Precision = \frac{t_p}{t_p+f_p} $$
+
+$$ Recall = \frac{t_p}{t_p+f_n} $$
+
+$$ F1score = 2*\frac{precision*recall}{precison+recall}$$
+
+* High precision = Not many real emails predicted as spam
+* High recall = Predicted most emails correctly
+
+#### Calculate confusion matrix
+
+```Python
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+
+knn = KNeighbornsClassifier(n_neighbors=8)
+
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.4,random_state=42)
+
+knn.fit(X_train,y_train)
+
+y_pred = knn.predict(X_test)
+
+print(confusion_matrix(y_test,y_pred))
+
+print(classification_report(y_test,y_pret))
+
+
+```
+
+#### Exercice 12
+
+```Python
+# Import necessary modules
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+
+# Create training and test set
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.4,random_state=42)
+
+# Instantiate a k-NN classifier: knn
+knn = KNeighborsClassifier(n_neighbors=6)
+
+# Fit the classifier to the training data
+knn.fit(X_train,y_train)
+
+# Predict the labels of the test data: y_pred
+y_pred = knn.predict(X_test)
+```
+
+### Logistic regression and the ROC curve
+
+Logistic regression is used in classification problems and not regression problems.
+
+#### Logistic regression for binary variables
+
+* Logistic regression output the probabilities
+  * if probalities is > 0.5 the data is labeled '1'
+  * if probabilities is < 0.5 the data is labeled '0'
+
+
+```Python
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+
+logreg = LogisticRegression()
+X_train,X_test,y_train,y_test  train_test_split(X,y,test_size=0.4,random_state=42)
+
+logreg.fit(X_train,y_train)
+
+y_pred = logreg.predict(X_test)
+```
+
+* By default, the logistic regression threshold = 0.5
+* Not specific to logistic regression (k-NN classifiers also have thresholds)
+
+
+If the threshold vary:
+
+ROC curve
+```Python
+from sklearn.metrics import roc_curve
+y_pred_prop = logreg.predict_proba(X_test)[:,1]
+fpr,trp,threshold = roc_curve(y_test,y_pred_prob)
+plt.plot([0,1],[0,1],'k--)
+plt.plot(fpr,tpr,label='Logistic Regression')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Logistic Regression ROC Curve')
+plt.show()
+```
+#### Exercice 15 : Logistic Regression
+
+```Python
+# Import the necessary modules
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import confusion_matrix, classification_report
+
+# Create training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.4, random_state=42)
+
+# Create the classifier: logreg
+logreg = LogisticRegression()
+
+# Fit the classifier to the training data
+logreg.fit(X_train,y_train)
+
+# Predict the labels of the test set: y_pred
+y_pred = logreg.predict(X_test)
+
+# Compute and print the confusion matrix and classification report
+print(confusion_matrix(y_test, y_pred))
+print(classification_report(y_test, y_pred))
+```
+
+#### Exercice 16 : Logistic Regression and ROC curve
+
+```Python
+# Import necessary modules
+from sklearn.metrics import roc_curve
+
+# Compute predicted probabilities: y_pred_prob
+y_pred_prob = logreg.predict_proba(X_test)[:,1]
+
+# Generate ROC curve values: fpr, tpr, thresholds
+fpr, tpr, thresholds = roc_curve(y_test,y_pred_prob)
+
+# Plot ROC curve
+plt.plot([0, 1], [0, 1], 'k--')
+plt.plot(fpr, tpr)
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve')
+plt.show()
+```
+
+#### Exercice 17 : AUC Score
+```Python
+# Import necessary modules
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import cross_val_score
+
+# Compute predicted probabilities: y_pred_prob
+y_pred_prob = logreg.predict_proba(X_test)[:,1]
+
+# Compute and print AUC score
+print("AUC: {}".format(roc_auc_score(y_test, y_pred_prob)))
+
+# Compute cross-validated AUC scores: cv_auc
+cv_auc = cross_val_score(logreg,X,y,cv=5,scoring='roc_auc')
+
+# Print list of AUC scores
+print("AUC scores computed using 5-fold cross-validation: {}".format(cv_auc))
+```
+
+## Hyper parameters tuning
+
+Hyper parameters tuning is about choosing the parameters for a model that fit the data the best.
+
+* Linear regression :
+* Ridge / Lasso regression : parameters = [alpha] for regularization 
+* k-Nearest neighborns : parameter = n_neighbors
+
+Hyper parameters cannot be learned by fitting the model.
+
+### Grid search cross-validation
+
+Choose the combination of all hyper parameters that performs the best. This can been done wiith scikit-learn with GridSearchCV.
+
+```Python
+from sklearn.model_selection import GridSearchCV
+param_grid = {'n_neighbors',np.arrange(1,50)}
+knn = KNeighborsClassifier()
+knn_cv = GridSearchCV(knn,param_grid,cv=5)
+knn_cv.fit(X,y)
+knn_cv.best_params_ # Best parameters
+```
+
+#### Exercice 18: Finding best hyper parameters for LogisticRegression with GridSearchCV
+
+```Python
+# Import necessary modules
+from sklearn.linear_model  import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+
+# Setup the hyperparameter grid
+c_space = np.logspace(-5, 8, 15)
+param_grid = {'C': c_space }
+
+# Instantiate a logistic regression classifier: logreg
+logreg = LogisticRegression()
+
+# Instantiate the GridSearchCV object: logreg_cv
+logreg_cv = GridSearchCV(logreg, param_grid, cv=5)
+
+# Fit it to the data
+logreg_cv.fit(X,y)
+
+# Print the tuned parameters and score
+print("Tuned Logistic Regression Parameters: {}".format(logreg_cv.best_params_)) 
+print("Best score is {}".format(logreg_cv.best_score_))
+
+```
+
+GridSearchCV can be very computationally expensive, so RandomizedSearchCV can be used to improve the search of the best hyperparameters.
+
+#### Exercice 19: Using RandomizedSearchCV to find best hyperparameters
+
+```Python
+# Import necessary modules
+from scipy.stats import randint
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import RandomizedSearchCV
+
+# Setup the parameters and distributions to sample from: param_dist
+param_dist = {"max_depth": [3, None],
+              "max_features": randint(1, 9),
+              "min_samples_leaf": randint(1, 9),
+              "criterion": ["gini", "entropy"]}
+
+# Instantiate a Decision Tree classifier: tree
+tree = DecisionTreeClassifier()
+
+# Instantiate the RandomizedSearchCV object: tree_cv
+tree_cv = RandomizedSearchCV(tree, param_dist, cv=5)
+
+# Fit it to the data
+tree_cv.fit(X,y)
+
+# Print the tuned parameters and score
+print("Tuned Decision Tree Parameters: {}".format(tree_cv.best_params_))
+print("Best score is {}".format(tree_cv.best_score_))
+```
+
+RandomizedSearchCV will never outperform GridSearchCV.
+
+### How well can the model perform on never seen before seen data  (Hold-out set reasoning)
+
+* How well can the model perform on never seen before seen data ?
+* Using ALL data for cross-validation is not ideal
+* Split data into training and hold-out set at the begining
+* Perform grid search cross-validation on training set
+* Choose best hyperparameters and evaluate on hold-out set
+
+### Exercice 20 : Hold-out set in practice I: Classification
+
+```Python
+# Import necessary modules
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+
+# Create the hyperparameter grid
+c_space = np.logspace(-5, 8, 15)
+param_grid = {'C': c_space, 'penalty': ['l1', 'l2']}
+
+# Instantiate the logistic regression classifier: logreg
+logreg = LogisticRegression()
+
+# Create train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.4,random_state=42)
+
+# Instantiate the GridSearchCV object: logreg_cv
+logreg_cv = GridSearchCV(logreg,param_grid=param_grid,cv=5)
+
+# Fit it to the training data
+logreg_cv.fit(X_train,y_train)
+```
+
+### Exercice 21 : Hold-out set in practice 2: Regression
+```Python
+# Import necessary modules
+from sklearn.linear_model import ElasticNet
+from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
+# Create train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.4,random_state=42)
+
+# Create the hyperparameter grid
+l1_space = np.linspace(0, 1, 30)
+param_grid = {'l1_ratio': l1_space}
+
+# Instantiate the ElasticNet regressor: elastic_net
+elastic_net = ElasticNet()
+
+# Setup the GridSearchCV object: gm_cv
+gm_cv = GridSearchCV(elastic_net, param_grid=param_grid, cv=5)
+
+# Fit it to the training data
+gm_cv.fit(X_train,y_train)
+
+# Predict on the test set and compute metrics
+y_pred = gm_cv.predict(X_test)
+r2 = gm_cv.score(X_test, y_test)
+mse = (mean_squared_error(y_test,y_pred))
+print("Tuned ElasticNet l1 ratio: {}".format(gm_cv.best_params_))
+print("Tuned ElasticNet R squared: {}".format(r2))
+``` 
