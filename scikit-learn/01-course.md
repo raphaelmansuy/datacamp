@@ -200,7 +200,7 @@ plt.show()
 
 ### Regression
 
-In a regression problem the target value to predict is a continuous value.
+In a regression problem, the target value to predict is a continuous value.
 
 ```Python
 # importing the libraries
@@ -856,3 +856,275 @@ mse = (mean_squared_error(y_test,y_pred))
 print("Tuned ElasticNet l1 ratio: {}".format(gm_cv.best_params_))
 print("Tuned ElasticNet R squared: {}".format(r2))
 ``` 
+
+## Preprocessing data
+
+### Dealing with categorical features
+ 
+ * Need to encode categorical features numerically
+ * Convert to 'dummy variables'
+   * 0: Observation was NOT that category
+   * 1: Observation was that category
+
+ How to encode categorical features:
+
+  * skit-learn: OneHotEncoder()
+  * pandas: get_dummies()
+   
+```Python
+import pandas as pd
+df = pd.read_csv('auto.csv')
+df_origin = pd.get_dummies(df)
+print(df_origin.head())
+# drop redondant information 
+df_origin = df_origin.drop('origin_Asia',axis=1)
+print(df_origin.head())
+
+```
+
+#### Exercice 22 
+
+```Python
+# Import pandas
+import pandas as pd
+
+# Read 'gapminder.csv' into a DataFrame: df
+df = pd.read_csv('gapminder.csv')
+
+# Create a boxplot of life expectancy per region
+df.boxplot('life', 'Region', rot=60)
+
+# Show the plot
+plt.show()
+```
+
+```Python
+# Create dummy variables: df_region
+df_region = pd.get_dummies(df)
+
+# Print the columns of df_region
+print(df_region.columns)
+
+# Create dummy variables with drop_first=True: df_region
+df_region = pd.get_dummies(df,drop_first=True)
+
+# Print the new columns of df_region
+print(df_region.columns)
+```
+
+```Python
+# Import necessary modules
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import cross_val_score
+
+# Instantiate a ridge regressor: ridge
+ridge = Ridge(alpha=0.5,normalize=True)
+
+# Perform 5-fold cross-validation: ridge_cv
+ridge_cv = cross_val_score(ridge,X,y,cv=5)
+
+# Print the cross-validated scores
+print(ridge_cv)
+
+```
+
+## Handling missing data
+
+### Dropping missing data
+
+```Python
+# Convert '?' to NaN
+df[df == '?'] = np.nan
+
+# Print the number of NaNs
+print(df.isnull().sum())
+
+# Print shape of original DataFrame
+print("Shape of Original DataFrame: {}".format(df.shape))
+
+# Drop missing values and print shape of new DataFrame
+df = df.dropna()
+
+# Print shape of new DataFrame
+print("Shape of DataFrame After Dropping All Rows with Missing Values: {}".format(df.shape))
+```
+
+### Exercice 23: Imputing missing data in a ML Pipeline I
+
+```Python
+# Import necessary modules
+from sklearn.preprocessing import Imputer
+from sklearn.pipeline import Pipeline
+from sklearn.svm import SVC
+
+# Setup the pipeline steps: steps
+steps = [('imputation', Imputer(missing_values='NaN', strategy='most_frequent', axis=0)),
+        ('SVM', SVC())]
+
+# Create the pipeline: pipeline
+pipeline = Pipeline(steps)
+
+# Create training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.30,random_state=42)
+
+# Fit the pipeline to the train set
+pipeline.fit(X_train,y_train)
+
+# Predict the labels of the test set
+y_pred = pipeline.predict(X_test)
+
+# Compute metrics
+print(classification_report(y_test, y_pred))
+
+```
+## Centering and scaling
+
+Scaling is necessary because many models use distance calculation.
+We want feature to be on a similar scale. So we use normalizing (or scaling and centering).
+
+Ways to normalize:
+
+* All feature are centered arround zero and have a variance one (subtract the mean and the stdvar)
+* Substract the minimum and divide by the range (Min zero and maximum one)
+* Can also normalize so the data ranges from -1 to +1
+
+#### Scaling in scikit-learn
+
+```Python
+from sklearn.preprocessing import scale
+X_scaled = scale(X)
+```
+
+#### Scaling in a pipeline
+```Python
+from sklearn.preprocessing import StandardScaler
+steps = [('scaler',StandardScaler()),'knn',KNeighborsClassifier()]
+pipeline = Pipeline(steps)
+
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=21)
+knn_scaled = pipeline.fit(X_train,y_train)A
+y_pred = pipeline.predict(y_test)
+accuracy_score(y_test,y_pred)
+```
+
+### CV and scaling in a pipeline
+
+```Python
+steps = [('scaler',StandardScaler()),('knn',KNeighborsClassifier())]
+
+pipeline = Pipeline(steps)
+
+parameters = {knn__n_neighbors=np.arange(1,50)}
+
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=21)
+
+cv = GridSearchCV(pipeline,params_grid=parameters)
+
+cv.fit(X_train,y_train)
+y_pred = cv.predict(X_test)
+
+print(cv.best_params_)
+
+print(cv.score(X_test,y_test))
+
+print(classification_report(y_test,y_pred))
+```
+
+#### Exercice 24 : Scaling and centering data
+
+```Python
+# Import scale
+from sklearn.preprocessing import scale
+# Scale the features: X_scaled
+X_scaled = scale(X)
+
+# Print the mean and standard deviation of the unscaled features
+print("Mean of Unscaled Features: {}".format(np.mean(X)))
+print("Standard Deviation of Unscaled Features: {}".format(np.std(X)))
+
+# Print the mean and standard deviation of the scaled features
+print("Mean of Scaled Features: {}".format(np.mean(X_scaled))) 
+print("Standard Deviation of Scaled Features: {}".format(np.std(X_scaled)))
+```
+#### Exercice 25: Using scaling and centering in a pipeline
+
+```Python
+# Import the necessary modules
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+# Setup the pipeline steps: steps
+steps = [('scaler', StandardScaler()),
+        ('knn', KNeighborsClassifier())]
+        
+# Create the pipeline: pipeline
+pipeline = Pipeline(steps)
+
+# Create train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,random_state=42)
+
+# Fit the pipeline to the training set: knn_scaled
+knn_scaled = pipeline.fit(X_train,y_train)
+```
+
+#### Exercice 26: Pipeline for classification
+
+```Python
+# Setup the pipeline
+steps = [('scaler', StandardScaler()),
+         ('SVM', SVC())]
+
+pipeline = Pipeline(steps)
+
+# Specify the hyperparameter space
+parameters = {'SVM__C':[1, 10, 100],
+              'SVM__gamma':[0.1, 0.01]}
+
+# Create train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2,random_state=21)
+
+# Instantiate the GridSearchCV object: cv
+cv = GridSearchCV(pipeline,param_grid=parameters,cv=3)
+
+# Fit to the training set
+cv.fit(X_train,y_train)
+
+# Predict the labels of the test set: y_pred
+y_pred = cv.predict(X_test)
+
+# Compute and print metrics
+print("Accuracy: {}".format(cv.score(X_test, y_test)))
+print(classification_report(y_test, y_pred))
+print("Tuned Model Parameters: {}".format(cv.best_params_))
+
+```
+
+#### Exercice 27: pipeline for regression
+
+```Python
+# Setup the pipeline steps: steps
+steps = [('imputation', Imputer(missing_values='NaN', strategy='mean', axis=0)),
+         ('scaler', StandardScaler()),
+         ('elasticnet', ElasticNet())]
+
+# Create the pipeline: pipeline 
+pipeline = Pipeline(steps)
+
+# Specify the hyperparameter space
+parameters = {'elasticnet__l1_ratio':np.linspace(0,1,30)}
+
+# Create train and test sets
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.4,random_state=42)
+
+# Create the GridSearchCV object: gm_cv
+gm_cv = GridSearchCV(pipeline,param_grid=parameters,cv=3)
+
+# Fit to the training set
+gm_cv.fit(X_train,y_train)
+
+# Compute and print the metrics
+r2 = gm_cv.score(X_test, y_test)
+print("Tuned ElasticNet Alpha: {}".format(gm_cv.best_params_))
+print("Tuned ElasticNet R squared: {}".format(r2))
+
+```
