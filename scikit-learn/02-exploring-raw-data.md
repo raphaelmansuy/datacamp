@@ -787,3 +787,235 @@ print("\nAccuracy on budget dataset: ", accuracy)
 ```
 
 ## Learning from the expert processing
+
+Tricks used in machine learning competitions
+
+* Text pre-processing
+* Statiscal methods
+* Computational efficiency
+  
+### Text preprocessing
+
+* NLP tricks for text data
+  * Tokenize on punctuation to avoid hyphens, underscore, etc ..
+  *  Include unigrams and bi-grams in the model to capture important information involving multiple tokens - e.g., 'middle school'
+
+Example: N-grams and tokenization
+
+```python
+vec = CounterVectorizer(token_pattern=TOKENS_ALPHANUEMRIC,ngram_range(1,2))
+```
+
+Submission:
+
+```python
+holdout = pd.read_csv('HoldoutData.csv',inde_col=0)
+
+predictions = pl.predict_proba(holdout)
+
+predictions_df = pd.DataFrame(columns=pd.get_dummies(df[LABELS].columns),index=holdout.index,data=predictions)
+
+predictions_df.to_csv('predictions.csv')
+
+score = score_submission(pred_path='predictions.csv')
+```
+
+### Exercice 16 : Practice text preprocessing
+
+```python
+# Import the CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Create the text vector
+text_vector = combine_text_columns(X_train)
+
+# Create the token pattern: TOKENS_ALPHANUMERIC
+TOKENS_ALPHANUMERIC = '[A-Za-z0-9]+(?=\\s+)'
+
+# Instantiate the CountVectorizer: text_features
+text_features = CountVectorizer(token_pattern=TOKENS_ALPHANUMERIC)
+
+# Fit text_features to the text vector
+text_features.fit(text_vector)
+
+# Print the first 10 tokens
+print(text_features.get_feature_names()[:10])
+
+
+# Import pipeline
+from sklearn.pipeline import Pipeline
+
+# Import classifiers
+from sklearn.linear_model import LogisticRegression
+from sklearn.multiclass import OneVsRestClassifier
+
+# Import CountVectorizer
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Import other preprocessing modules
+from sklearn.preprocessing import Imputer
+from sklearn.feature_selection import chi2, SelectKBest
+
+# Select 300 best features
+chi_k = 300
+
+# Import functional utilities
+from sklearn.preprocessing import FunctionTransformer, MaxAbsScaler
+from sklearn.pipeline import FeatureUnion
+
+# Perform preprocessing
+get_text_data = FunctionTransformer(combine_text_columns, validate=False)
+get_numeric_data = FunctionTransformer(lambda x: x[NUMERIC_COLUMNS], validate=False)
+
+# Create the token pattern: TOKENS_ALPHANUMERIC
+TOKENS_ALPHANUMERIC = '[A-Za-z0-9]+(?=\\s+)'
+
+# Instantiate pipeline: pl
+pl = Pipeline([
+        ('union', FeatureUnion(
+            transformer_list = [
+                ('numeric_features', Pipeline([
+                    ('selector', get_numeric_data),
+                    ('imputer', Imputer())
+                ])),
+                ('text_features', Pipeline([
+                    ('selector', get_text_data),
+                    ('vectorizer', CountVectorizer(token_pattern=TOKENS_ALPHANUMERIC,
+                                                   ngram_range=(1,2))),
+                    ('dim_red', SelectKBest(chi2, chi_k))
+                ]))
+             ]
+        )),
+        ('scale', MaxAbsScaler()),
+        ('clf', OneVsRestClassifier(LogisticRegression()))
+    ])
+```
+
+### Stats tricks
+
+* Statiscal tool that the winner used: interactions terms
+* Case when words are not near each others:
+  * Example:
+    * English teacher for 2nd grade
+    * 2nd grade - budget for English teacher
+  * Interactions terms mathematically describe when tokens appear together
+  * Interactions terms: the math
+
+$$ \beta_1x_1 + \beta_2x_2+\beta_3(x_1 * x_2) $$
+
+#### Adding interaction features with scikit-learn
+
+```python
+
+from sklearn.preprocessing import PolynomialFeatures
+
+interaction = PolynomialFeatures(degree=2,interraction_only=True,
+  include_bias=False)
+
+interracton.fit_transform(x)
+```
+
+* Sparce interraction features
+
+```python
+SparseInterraction(degree=2).fit_transform(x).toarray()
+```
+
+#### Exercice 17: stats tricks applied
+
+```python
+# Instantiate pipeline: pl
+pl = Pipeline([
+        ('union', FeatureUnion(
+            transformer_list = [
+                ('numeric_features', Pipeline([
+                    ('selector', get_numeric_data),
+                    ('imputer', Imputer())
+                ])),
+                ('text_features', Pipeline([
+                    ('selector', get_text_data),
+                    ('vectorizer', CountVectorizer(token_pattern=TOKENS_ALPHANUMERIC,
+                                                   ngram_range=(1, 2))),  
+                    ('dim_red', SelectKBest(chi2, chi_k))
+                ]))
+             ]
+        )),
+        ('int', SparseInteractions(degree=2)),
+        ('scale', MaxAbsScaler()),
+        ('clf', OneVsRestClassifier(LogisticRegression()))
+    ])
+```
+
+### Computational tricks and the winning model
+
+* Adding new features may cause enormous increase in array size
+* Hashing is a way of increasing memory efficiency
+
+When to use the hashing tricks ?
+* Want to make the array as small as possible
+  * Dimensinality reduction
+* Particulary useful on large datasets
+  * e.g., lots of text data
+
+```python
+from sklearn.feature_extraction.text import HashingVectorizer
+
+vec = HashingVectorizer(norm=None,
+      non_negative=True,
+      token_pattern=TOKENS_ALPHANUMERIC,
+      ngram_range=(1,2))
+```   
+
+#### Exercice 18: Implementing the hashing trick in scikit-learn
+
+```python
+# Import HashingVectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
+
+# Get text data: text_data
+text_data = combine_text_columns(X_train)
+
+# Create the token pattern: TOKENS_ALPHANUMERIC
+TOKENS_ALPHANUMERIC = '[A-Za-z0-9]+(?=\\s+)' 
+
+# Instantiate the HashingVectorizer: hashing_vec
+hashing_vec = HashingVectorizer(token_pattern=TOKENS_ALPHANUMERIC)
+
+# Fit and transform the Hashing Vectorizer
+hashed_text = hashing_vec.fit_transform(text_data)
+
+# Create DataFrame and print the head
+hashed_df = pd.DataFrame(hashed_text.data)
+print(hashed_df.head())
+```
+
+```python
+# Import the hashing vectorizer
+from sklearn.feature_extraction.text import HashingVectorizer
+
+# Instantiate the winning model pipeline: pl
+pl = Pipeline([
+        ('union', FeatureUnion(
+            transformer_list = [
+                ('numeric_features', Pipeline([
+                    ('selector', get_numeric_data),
+                    ('imputer', Imputer())
+                ])),
+                ('text_features', Pipeline([
+                    ('selector', get_text_data),
+                    ('vectorizer', HashingVectorizer(token_pattern=TOKENS_ALPHANUMERIC,
+                                                     non_negative=True, norm=None, binary=False,
+                                                     ngram_range=(1,2))),
+                    ('dim_red', SelectKBest(chi2, chi_k))
+                ]))
+             ]
+        )),
+        ('int', SparseInteractions(degree=2)),
+        ('scale', MaxAbsScaler()),
+        ('clf', OneVsRestClassifier(LogisticRegression()))
+    ])
+```
+
+#### Useful dataset for challenge
+
+[https://www.datadriven.org](https://www.datadriven.org)
