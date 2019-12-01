@@ -518,3 +518,565 @@ plt.show()
 ```
 
 ## Visualize PCA (Principal Component Analysis)
+
+### Dimension reduction
+ 
+ * More efficient storage and computation
+ * Remove less-informative "noise" features
+ * ... wich cause problems for predictions tasks, e.g. classification, regression
+
+### Principal Component Analysis
+
+* PCA = "Principal Component Analysis"
+* Fundamental dimension reduction technique
+* First step "decorrelation" 
+  * PCA aligns data with axes
+  * Shifs data samples so they have mean 0
+    * No information is lost
+* Second step reduces dimension
+
+```python
+from sklearn.decomposition import PCA
+
+model = PCA()
+
+model.fit(samples)
+
+transformed = model.transform(samples)
+
+print(transformed)
+```
+
+#### Exercice correlated data in nature
+
+```python
+# Perform the necessary imports
+import matplotlib.pyplot as plt
+from scipy.stats import pearsonr
+
+# Assign the 0th column of grains: width
+width = grains[:,0]
+
+# Assign the 1st column of grains: length
+length = grains[:,1]
+
+# Scatter plot width vs length
+plt.scatter(width,length)
+plt.axis('equal')
+plt.show()
+
+# Calculate the Pearson correlation
+correlation, pvalue = pearsonr(width,length)
+
+# Display the correlation
+print(correlation)
+
+```
+
+#### Exercise decorrelating the grain measurements with PCA
+
+```python
+# Import PCA
+from sklearn.decomposition import PCA
+
+# Create PCA instance: model
+model = PCA()
+
+# Apply the fit_transform method of model to grains: pca_features
+pca_features = model.fit_transform(grains)
+
+# Assign 0th column of pca_features: xs
+xs = pca_features[:,0]
+
+# Assign 1st column of pca_features: ys
+ys = pca_features[:,1]
+
+# Scatter plot xs vs ys
+plt.scatter(xs, ys)
+plt.axis('equal')
+plt.show()
+
+# Calculate the Pearson correlation of xs and ys
+correlation, pvalue = pearsonr(xs, ys)
+
+# Display the correlation
+print(correlation)
+```
+
+### Intrinsic dimension
+
+* Intrinsic dimension = number of features needed to approximate the dataset
+* Essential idea behind dimension reduction
+* What is the most compact representation of the samples ?
+* Can be detected with PCA
+
+PCA identifies intrinsic dimension
+
+* PCA identifies intrinsic dimension when samples have _any number_ of features
+* Intrinsic dimension = number of PCA features with significant variance
+
+```python
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
+pca = PCA()
+pca.fit(samples)
+
+features = range(pca.n_components_)
+
+plt.bar(features,pca.explained_variance_)
+plt.xticks(features)A
+
+plt.ylabel('variance')
+plt.xlabel('PCA feature')
+
+plt.show()
+
+```
+
+### Exercice : the first principal component
+
+```python
+# Make a scatter plot of the untransformed points
+plt.scatter(grains[:,0], grains[:,1])
+
+# Create a PCA instance: model
+model = PCA()
+
+# Fit model to points
+model.fit(grains)
+
+# Get the mean of the grain samples: mean
+mean = model.mean_
+
+# Get the first principal component: first_pc
+first_pc = model.components_[0,:]
+
+# Plot first_pc as an arrow, starting at mean
+plt.arrow(mean[0], mean[1], first_pc[0], first_pc[1], color='red', width=0.01)
+
+# Keep axes on same scale
+plt.axis('equal')
+plt.show()
+```
+
+#### Exercice : variance of the PCA feature
+
+```python
+# Perform the necessary imports
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import make_pipeline
+import matplotlib.pyplot as plt
+
+# Create scaler: scaler
+scaler = StandardScaler()
+
+# Create a PCA instance: pca
+pca = PCA()
+
+# Create pipeline: pipeline
+pipeline = make_pipeline(scaler,pca)
+
+# Fit the pipeline to 'samples'
+pipeline.fit(samples)
+
+# Plot the explained variances
+features = range(pca.n_components_)
+plt.bar(features, pca.explained_variance_)
+plt.xlabel('PCA feature')
+plt.ylabel('variance')
+plt.xticks(features)
+plt.show()
+
+```
+
+### Dimension reduction with PCA
+
+* Represeents same data, using less features
+* Important part of machine-learning pipelines
+* Can be done with PCA
+
+```python
+from sklearn.decomposition import PCA
+pca = PCA(n_components=2)
+
+pca.fit(samples)
+
+transformed = pca.transform(samples)
+
+import matplotlib.pyplot as plt
+
+xs = transformed[:,0]
+ys = transformed[:,1]
+
+plt.scatter(xs,ys,c=species)
+plt.show()
+```
+
+Dimension reduction with PCA
+
+* Discards low variance PCA features
+* Assumes the high variance features are informative
+* Assumption typlicalle holds in practice (e.g. for iris)
+
+
+#### Word frequency arrays
+
+  * Rows represent documents, columns represents words
+  * Entries measure presence of each word in each document
+  * ... measure using "tf-idf"
+
+#### Sparse arrays and csr_matrix
+
+  * Array is "sparse" : most entries are zero
+  * Can use **scipy.sparse.csr_matrix** instead of NumPy array
+  * skit-learn PCA doesn't support csr_matrix
+  * Use scikit-learn **TruncatedSVD** instead
+
+```python
+from sklearn.decomposition import TruncatedSVD 
+
+model = TruncatedSVD(n_components=1)
+
+model.fit(documents)
+
+transformed = model.transform(documents)
+```
+
+#### Dimension reduction of the fish measurements
+
+```python
+# Import PCA
+from sklearn.decomposition import PCA
+
+# Create a PCA model with 2 components: pca
+pca = PCA(n_components=2)
+
+# Fit the PCA instance to the scaled samples
+pca.fit(scaled_samples)
+
+# Transform the scaled samples: pca_features
+pca_features = pca.transform(scaled_samples)
+
+# Print the shape of pca_features
+print(pca_features.shape)
+
+```
+
+#### Exercice: A tf-idf word-frequency array
+
+```python
+
+# Import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Create a TfidfVectorizer: tfidf
+tfidf = TfidfVectorizer() 
+
+# Apply fit_transform to document: csr_mat
+csr_mat = tfidf.fit_transform(documents)
+
+# Print result of toarray() method
+print(csr_mat.toarray())
+
+# Get the words: words
+words = tfidf.get_feature_names()
+
+# Print words
+print(words)
+```
+
+```python
+# Perform the necessary imports
+from sklearn.decomposition import TruncatedSVD
+from sklearn.cluster import KMeans
+from sklearn.pipeline import make_pipeline
+
+# Create a TruncatedSVD instance: svd
+svd = TruncatedSVD(n_components=50)
+
+# Create a KMeans instance: kmeans
+kmeans = KMeans(n_clusters=6)
+
+# Create a pipeline: pipeline
+pipeline = make_pipeline(svd,kmeans)
+``# Perform the necessary imports
+from sklearn.decomposition import TruncatedSVD
+from sklearn.cluster import KMeans
+from sklearn.pipeline import make_pipeline
+
+# Create a TruncatedSVD instance: svd
+svd = TruncatedSVD(n_components=50)
+
+# Create a KMeans instance: kmeans
+kmeans = KMeans(n_clusters=6)
+
+# Create a pipeline: pipeline
+pipeline = make_pipeline(svd,kmeans)
+
+# Import pandas
+import pandas as pd
+
+# Fit the pipeline to articles
+pipeline.fit(articles)
+
+# Calculate the cluster labels: labels
+labels = pipeline.predict(articles)
+
+# Create a DataFrame aligning labels and titles: df
+df = pd.DataFrame({'label': labels, 'article': titles})
+
+# Display df sorted by cluster label
+print(df.sort_values('label'))
+
+```
+
+## Non-negative matrix factorization (NMF)
+
+* NMF = "non-negative matrix factorization"
+* Dimension reduction technique
+* NMF models are _interpretable_ (unlike PCA)
+* All samples features must be non-negative (>= 0)
+
+### Example with word-frequency array
+
+```python
+from sklearn.decomposition import NMF
+
+model = NMF(n_components=2)
+
+model.fit(samples)
+
+nmf_features = model.transform(samples) # NMF has components just like PCA has principal components
+
+# Dimension of components = dimension of samples
+# Entries are non-negative
+# NMF entries are non-negatives
+
+```
+
+ NMF fits to non-negative data, only
+
+ * Word frequencies in each documents
+ * Images encoded as array
+ * Audio spectrograms
+ * Purchase histories on e-commerce sites
+
+#### NMF applied to Wikipedia articles
+
+```python
+# Import NMF
+from sklearn.decomposition import NMF 
+
+# Create an NMF instance: model
+model = NMF(n_components=6)
+
+# Fit the model to articles
+model.fit(articles)
+
+# Transform the articles: nmf_features
+nmf_features = model.transform(articles)
+
+# Print the NMF features
+print(nmf_features)
+
+# Import pandas
+import pandas as pd
+
+# Create a pandas DataFrame: df
+df = pd.DataFrame(nmf_features,index=titles)
+
+# Print the row for 'Anne Hathaway'
+print(df.loc['Anne Hathaway'])
+
+# Print the row for 'Denzel Washington'
+print(df.loc['Denzel Washington'])
+
+```
+
+### NMF learns interpretable parts
+
+Example:
+
+* Word-frequency array articles (tf-idf)
+* 20,000 scientific articles (rows)
+* 800 words (columns)
+
+Applying NMF to the articles:
+
+```python
+from sklearn.decomposition import NMF
+
+nmf = NMF(n_components=10)
+
+print(nmf.components_.shape)
+```
+
+NMF components:
+
+* For documents:
+  * NMF components represent topics
+  * NMF features combine topics into documents 
+* For images:
+  * NMF component are parts of images
+
+Visualize 
+```python
+
+# Reshape vector 1D representation of an image into a 2D matrix
+
+bitmap = sample.reshape(2,3)
+
+from matplotlib import pyplot as plt
+plt.imshow(bitmap,cmap='gray',interpolation='nearest')
+plt.show()
+```
+
+#### Exercice : NMF learns topics of documents
+```python
+# Import pandas
+import pandas as pd
+
+# Create a DataFrame: components_df
+components_df = pd.DataFrame(model.components_,columns=words)
+
+# Print the shape of the DataFrame
+print(components_df.shape)
+
+# Select row 3: component
+component = components_df.iloc[3,:]
+
+# Print result of nlargest
+print(component.nlargest())
+```
+
+#### Exercice : Explore the LED digits dataset
+
+```python
+# Import pyplot
+from matplotlib import pyplot as plt
+
+# Select the 0th row: digit
+digit = samples[0,:]
+
+# Print digit
+print(digit)
+
+# Reshape digit to a 13x8 array: bitmap
+bitmap = digit.reshape(13,8)
+
+# Print bitmap
+print(bitmap)
+
+# Use plt.imshow to display bitmap
+plt.imshow(bitmap, cmap='gray', interpolation='nearest')
+plt.colorbar()
+plt.show()
+```
+
+### Exercie NMF learn part of the image
+
+```python
+# Import NMF
+from sklearn.decomposition import NMF
+
+# Create an NMF model: model
+model = NMF(n_components=7)
+
+# Apply fit_transform to samples: features
+features = model.fit_transform(samples)
+
+# Call show_as_image on each component
+for component in model.components_:
+    show_as_image(component)
+
+# Assign the 0th row of features: digit_features
+digit_features = features[0,:]
+
+# Print digit_features
+print(digit_features)
+```
+
+#### Exercice PCA doesn't learn part
+
+```python
+# Import PCA
+from sklearn.decomposition import PCA
+
+# Create a PCA instance: model
+model = PCA(n_components=7)
+
+# Apply fit_transform to samples: features
+features = model.fit_transform(samples)
+
+# Call show_as_image on each component
+for component in model.components_:
+    show_as_image(component)
+```
+## Building recommender systerm with NMF
+
+#### Exercice calculate similarities
+
+```python
+# Perform the necessary imports
+import pandas as pd
+from sklearn.preprocessing import normalize
+
+# Normalize the NMF features: norm_features
+norm_features = normalize(nmf_features)
+
+# Create a DataFrame: df
+df = pd.DataFrame(norm_features,index=titles)
+
+# Select the row corresponding to 'Cristiano Ronaldo': article
+article = df.loc['Cristiano Ronaldo',:]
+
+# Compute the dot products: similarities
+similarities = df.dot(article)
+
+# Display those with the largest cosine similarity
+print(similarities.nlargest())
+```
+
+#### Exercice recommend musical artist
+
+```python
+# Perform the necessary imports
+from sklearn.decomposition import NMF
+from sklearn.preprocessing import Normalizer, MaxAbsScaler
+from sklearn.pipeline import make_pipeline
+
+# Create a MaxAbsScaler: scaler
+scaler = MaxAbsScaler()
+
+# Create an NMF model: nmf
+nmf = NMF(n_components=20)
+
+# Create a Normalizer: normalizer
+normalizer = Normalizer()
+
+# Create a pipeline: pipeline
+pipeline = make_pipeline(scaler,nmf,normalizer)
+
+# Apply fit_transform to artists: norm_features
+norm_features = pipeline.fit_transform(artists)
+
+# Import pandas
+import pandas as pd
+
+# Create a DataFrame: df
+df = pd.DataFrame(norm_features,index=artist_names)
+
+# Select row of 'Bruce Springsteen': artist
+artist = df.loc['Bruce Springsteen',:]
+
+# Compute cosine similarities: similarities
+similarities = df.dot(artist)
+
+# Display those with highest cosine similarity
+print(similarities.nlargest())
+
+```
+
+
