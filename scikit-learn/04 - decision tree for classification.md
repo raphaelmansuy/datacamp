@@ -495,3 +495,736 @@ y_pred = vc.predict(X_test)
 accuracy = accuracy_score(y_pred, y_test)
 print('Voting Classifier: {:.3f}'.format(accuracy))
 ```
+
+## Bagging
+
+Voting classifier
+
+* same training set
+* different algorithms
+
+Bagging
+
+* Bagging: Bootstrap Aggregation
+* Uses a technique known as the bootstrap
+* Reduces the variance of individual models in the models in the ensemble
+
+### Bagging: classification & Regression
+
+* Classification
+  * Aggregates predictions by majority voting
+  * BaggingClassifier in scikit-learn
+
+* Regression
+  * Aggregates predictions through averaging
+  * BaggingRegressorin sckikit-learn
+
+```python
+# Import models and utility function
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
+SEED = 1
+
+X_train, X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,stratify=y,random_state=SEED)
+
+# Instanciate a classification-tree 'dt'
+dt = DecisionTreeClassifier(max_depth=4,nim_samples_leaf=0.16,random_state=SEED)
+# Instanciate a BaggingClassifier 'bc'
+bc = BaggingClassifier(base_estimator=dt,n_estimators=300,n_jobs=-1)
+# Fit 'bc' to the training set
+bc.fit(X_train,y_train)
+# Predict test set labels
+y_pred = bc.predict(X_test)
+# Evaluate and print test-set accuracy
+accuracy = accuracy_score(y_test,y_pred)
+print('Accuracy of Bagging Classifier: {:.3f}'.format(accuracy))
+```
+
+#### Exercice bagging classifier
+
+```python
+# Import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+# Import BaggingClassifier
+from sklearn.ensemble import BaggingClassifier
+
+# Instantiate dt
+dt = DecisionTreeClassifier(random_state=1)
+
+# Instantiate bc
+bc = BaggingClassifier(base_estimator=dt, n_estimators=50, random_state=1)
+
+# Fit bc to the training set
+bc.fit(X_train, y_train)
+
+# Predict test set labels
+y_pred = bc.predict(X_test)
+
+# Evaluate acc_test
+acc_test = accuracy_score(y_pred, y_test)
+print('Test set accuracy of bc: {:.2f}'.format(acc_test)) 
+```
+## Out of bag evaluation
+
+Some samples are never selected in bag classifer. We can use this samples to evaluate a model without using cross validation
+
+```python
+# Import models and split utility function
+from sklearn.ensemble import BaggingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
+SEED = 1
+
+X_Train,X_Test,y_train,y_test = train_test_split(X,y,test_size=0.3,stratify=y,random_state=SEED)
+
+# Instanciate a classification-tree 'dt'
+
+dt = DecisionTreeClassifier(max_depth=4,min_samples_leaf=0.16,random_state=SEED)
+
+# Instanciate a BaggingClassifier 'bc' ; set oob_score = True
+
+bc = BaggingClassifier(base_estimator=dt,n_estimators=300,oob_score=True,n_jobs=-1)
+
+# Fit 'bc' to the training set
+bc.fit(X_train,y_train)
+
+# Predict the test set labels
+y_pred = bc.predict(X_test)
+
+# Evaluate test set accuracy
+
+test_accuracy = accuracy_score(y_test,y_pred)
+
+# Extract the OOB accuracy from 'bc'
+
+oob_accuracy = bc.oob_score_
+
+# Print test set accuracy
+
+print('Test set accuracy: {:.3f}'.format(test_accuracy))
+
+# Print OOB accuracy
+
+print('OOB accuracy: {:.3f}'.format(oob_accuracy))
+
+```
+
+#### Exercice: OOB
+
+```python
+# Import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+# Import BaggingClassifier
+from sklearn.ensemble import BaggingClassifier
+
+# Instantiate dt
+dt = DecisionTreeClassifier(min_samples_leaf=8, random_state=1)
+
+# Instantiate bc
+bc = BaggingClassifier(base_estimator=dt, 
+            n_estimators=50,
+            oob_score=True,
+            random_state=1)
+
+i# Fit bc to the training set 
+bc.fit(X_train, y_train)
+
+# Predict test set labels
+y_pred = bc.predict(X_test)
+
+# Evaluate test set accuracy
+acc_test = accuracy_score(y_test, y_pred)
+
+# Evaluate OOB accuracy
+acc_oob = bc.oob_score_
+
+# Print acc_test and acc_oob
+print('Test set accuracy: {:.3f}, OOB accuracy: {:.3f}'.format(acc_test, acc_oob)
+```
+
+## Random Forests
+
+* Base estimator: Decision Tree, Logistic Regression, Neural Net, ...
+* Each estimator is trained on a distinct bootstrap sample of the training set
+* Estimators use all features for training and predictions
+
+
+### Random Forests: Classification & Regression
+
+* Classification
+  * Aggregates predictions by majority voting
+  * **RandomForestClassifier** in scikit-learn
+  
+* Regression
+  * Aggregates predictions through averaging
+  * **RandomForestRegressor** in scikit-learn
+
+```python
+# Basic imports
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error as MSE
+SEED = 1
+# Split dataset into 70% train and 30% test
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.3,random_state=SEED)
+# Instantiate a random forest regressor 'rf' 400 estimators
+rf = RandomForestRegressor(n_estimators=400,min_samples_leaf=0.12,random_state=SEED)
+# Fit 'rf' to the training set
+rf.fit(X_train,y_train)
+# Predict the test set labels
+y_pred = rf.predict(X_test)
+
+# Evaluate the test set RMSE
+rmse_test = MSE(y_test,y_pred)**(1/2)
+
+# Print the test set MSE
+print('Test set RMSE of rf: {:.2f}'.format(rmse_test))
+```
+
+## Feature Importance
+
+Tree-based methods: enable measuring the importance of each feature in prediction
+
+In sklearn:
+
+* how much the tree nodes use a particular feature (weighted average) to reduce impurity
+* accessed using the attribute ```feature_importance_```
+
+Feature Importance in sklearn
+
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Create a pd.Series of features
+imprtances_rf = pd.Series(rf.feature_importances_,index=X.columns)
+# Sort importances_rf
+sorted_importances_rf = importance_rf.sort_values()
+# Make a horizontal bar plot
+sorted_importances_rf.plot(kind='barh',color='ligthgreen')
+plt.show()
+```
+
+#### Exercice train a RF Regressor
+```python
+# Import RandomForestRegressor
+from sklearn.ensemble import RandomForestRegressor
+
+# Instantiate rf
+rf = RandomForestRegressor(n_estimators=25,
+            random_state=2)
+            
+# Fit rf to the training set
+rf.fit(X_train, y_train) 
+
+# Import mean_squared_error as MSE
+from sklearn.metrics import mean_squared_error as MSE
+
+# Predict the test set labels
+y_pred = rf.predict(X_test)
+
+# Evaluate the test set RMSE
+rmse_test = MSE(y_pred,y_test)**(1/2)
+
+# Print rmse_test
+print('Test set RMSE of rf: {:.2f}'.format(rmse_test))
+
+# Create a pd.Series of features importances
+importances = pd.Series(data=rf.feature_importances_,
+                        index= X_train.columns)
+
+# Sort importances
+importances_sorted = importances.sort_values()
+
+# Draw a horizontal barplot of importances_sorted
+importances_sorted.plot(kind='barh', color='lightgreen')
+plt.title('Features Importances')
+plt.show()
+```
+
+## AdaBoost
+
+* **Boosting**: Ensemble method combining several weak learners to form a strong learner
+* **Weak learner**: Model doing slightly better than random guessing
+
+
+### Boosting
+
+* Train an ensemble of predictors sequentially
+* Each predictor tries to correct it's predecessor
+* Most popular boosting methods:
+  * AdaBoost
+  * Gradient Boosting
+
+### AdaBoost
+
+* Stands for Adaptative Boosting
+* Each predictor pays more attention to the instances wrongly predicted by it's predecessor
+* Achived by changing the weights of training instances
+* Each predictor is assigned a coefficient alpha
+* alpha depends on the predictor's training error
+
+* Classification
+  * Weighted majority voting
+  * in sklearn: ```AdaBoostClassifier```
+  * 
+* Regression
+  * Weighted average
+  * in sklearn ```AdaBoostRegressor```
+
+```python
+# Import models and utility functions
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import train_test_split
+
+SEED = 1
+
+# Split data into 70% train and 30% test
+
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size:0.3,stratify=y,random_state=SEED)
+
+# Instantiate a classification-tree 'dt'
+
+dt = DecisionTreeClassifier(max_depth=1,random_state=SEED)
+
+# Instantiate a classification-tree 'dt'
+
+dt = DecisionTreeClassifier(max_depth=1,random_state=SEED)
+
+# Instantiate an AdaBoost classifier 'adab_clf'
+
+adab_clf = AdaBoostClassifier(base_estimator=df,n_estimators=100)
+
+# Fit 'adab_clf' to the training set
+adb_clf.fit(X_train,y_train)
+
+# Predict the test set probabilities of positive class
+
+y_pred_proba = adb_clf.predict_proba(X_test)[:,1]
+
+# Evaluate test-set roc_auc_score
+adb_clf_roc_auc_score = roc_au_score(y_test,y_pred_proba)
+
+# Print adb_clf_roc_auc_score
+print('ROC AUC Score: {:.2f})'.format(adb_clf_roc_auc_score))
+
+
+```
+
+#### Exercice AdaBoostClassifier
+
+```python
+# Import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+# Import AdaBoostClassifier
+from sklearn.ensemble import AdaBoostClassifier
+
+# Instantiate dt
+dt = DecisionTreeClassifier(max_depth=2, random_state=1)
+
+# Instantiate ada
+ada = AdaBoostClassifier(base_estimator=dt, n_estimators=180, random_state=1)
+# Fit ada to the training set
+ada.fit(X_train,y_train)
+
+# Compute the probabilities of obtaining the positive class
+y_pred_proba = ada.predict_proba(X_test)[:,1]
+
+# Import roc_auc_score
+from sklearn.metrics import roc_auc_score
+
+# Evaluate test-set roc_auc_score
+ada_roc_auc = roc_auc_score(y_test, y_pred_proba)
+
+# Print roc_auc_score
+print('ROC AUC score: {:.2f}'.format(ada_roc_auc))
+
+```
+
+### Gradient Boosted Trees
+
+* Sequential correction of predecessor's errors
+* Does not tweak the weights of training instances
+* Fit each predictor is trained using it's predecessor's residual errors as labels
+* Gradient Boosted Trees: a CART is used as a base learner
+
+Predictions:
+
+* Regressions:
+
+$$ y_{pred} = y_1 + \gamma r_1 + ... \gamma r_n $$
+
+  * in sklearn = ```GradientBoostingRegressor```
+
+* Classifications:
+  
+  * in sklearn: ```GradientBoostingClassifier```
+
+
+```python
+# Import models and utility functions
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squarred_error as MSE
+
+SEED = 1
+# Split dataset into 70% train and 30% test
+
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,random_state=SEED)
+
+# Instantiate a GradientBoostingRegressor 'gbt'
+gbt = GradientBoostingRegressor(n_estimators=300,max_depth=1,random_state=SEED)
+
+# Fit 'gbt' to the training set
+gbt.fit(X_train,y_train)
+
+# Predeict the test set labels
+y_pred = gbt.predict(X_test)
+
+# Evaluate the test set RMSE
+rmse_test = MSE(y_test,y_pred)**(1/2)
+
+# Print the test set RMSE
+print('Test set RMSE: {:.2f}'.format(rmse_test))
+
+```
+#### Exerice GradientBoostingRegressor
+
+```python
+# Import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+
+# Instantiate gb
+gb = GradientBoostingRegressor(max_depth=4, 
+            n_estimators=200,
+            random_state=2)
+
+# Fit gb to the training set
+gb.fit(X_train,y_train)
+
+# Predict test set labels
+y_pred = gb.predict(X_test)
+
+# Import mean_squared_error as MSE
+from sklearn.metrics import mean_squared_error as MSE
+
+# Compute MSE
+mse_test = MSE(y_test,y_pred)
+
+# Compute RMSE
+rmse_test = mse_test**(1/2)
+
+# Print RMSE
+print('Test set RMSE of gb: {:.3f}'.format(rmse_test))
+```
+
+### Stochastic Gradient Boosting (SGB)
+
+* Gradient Boosting: Cons
+  * GB involves an exhaustive search procedure
+  * Each CART is trained to find the best split points and features
+  * May lead to CARTs using the same split points and maybe the same features
+
+* Stochastic Gradient Boosting 
+  * Each tree is trained on a random subset of rows of the training data
+  * The sampled instances (40%-80% of the training set) are sampled without replacement
+  * Features are sampled (without replacement) when choosing split points
+  * Results: further ensemble diversity
+  * Effect: adding further variance to the ensemble of trees
+
+```python
+# Import models and utility functions
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error as MSE
+
+SEED = 1
+
+# Split dataset into 70% train and 30% test
+
+X_train,X_test,y_train, y_test = train_test_split(X,y,test_size=0.3,random_state=SEED)
+
+# Instanciate a Stochastic Gradient Boosting in sklearn
+
+sgbt = GradientBoostingRegressor(max_depth=1,subsample=0.2,max_features=0.2,n_estimators=300,random_state=SEED)
+
+# Fit the 'sgbt' to the training set
+sgbt.fit(X_train,y_train)
+
+# Predict the test set labels
+y_pred = sbgt.predict(X_test)
+
+# Evaluate the test set RMSE 'rmse_test'
+rmse_test = MSE(y_test,y_pred)**(1/2)
+
+# Print 'rmse_test'
+print('Test set RMSE: {:.2f}'.format(rmse_test))
+
+```
+
+
+#### Exercice Stochastic Gradient Boosting
+
+```python
+# Import GradientBoostingRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+
+# Instantiate sgbr
+sgbr = GradientBoostingRegressor(max_depth=4, 
+            subsample=0.9,
+            max_features=0.75,
+            n_estimators=200,                                
+            random_state=2)
+
+# Fit sgbr to the training set
+sgbr.fit(X_train,y_train)
+
+# Predict test set labels
+y_pred = sgbr.predict(X_test)
+
+# Import mean_squared_error as MSE
+from sklearn.metrics import mean_squared_error as MSE
+
+# Compute test set MSE
+mse_test = MSE(y_pred,y_test)
+
+# Compute test set RMSE
+rmse_test = mse_test**(1/2)
+
+# Print rmse_test
+print('Test set RMSE of sgbr: {:.3f}'.format(rmse_test))
+```
+
+## Tuning CART's Hyperparameters
+
+* **parameters**: learned from data
+  * CART example: split-point of a node, split-feature of a node ...
+* **hyperparameters**: not learned from data, set prior training
+  * CART example: ```max_depth```, ```min_samples_leaf```, splitting criterion ... 
+
+What is hyperparamaters tuning ?
+
+* **problem**: search for a set of optimal hyperparameters for learning algorithm
+* **solution**: find a set of optimal hyperparameters that results in an optimal model 
+* **Optimal model**: yields an optimal score
+* **Score**: in sklearn defaults to accuracy (classification) and R^2 (regression)
+* Cross validation is used to estimate the generalization peformance
+
+
+ Approach to hyperparameters tuning
+
+ * Grid Search
+ * Random Search
+ * Bayesian Optimization
+ * Genetic Algorithms
+ * ...
+
+```python
+# Import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeClassifier
+
+SEED = 1
+
+# Instanciate a DecisionTreeClassifier 'dt'
+dt = DecisionTreeClassifier(random_state=SEED)
+
+# Print's out 'dt' 's hyperparemeters
+
+print(dt.get_params())
+
+# Import GridSearchCV
+
+from sklearn.model_selection import GridSearchCV
+
+# Define the grid hyperparameters 'params_dt'
+
+params_dt = {
+  'max_depth': [3,4,,5,6],
+  'min_samples_leaf': [0.04,0.06,0.08],
+  'max_features': [0.2, 0.4, 0.6, 0.8]
+}
+
+# Instantiate a 10-fold CV grod search object 'grid_dt'
+
+grid_dt = GridSearchCV(
+  estimator=dt,
+  param_grid=params_dt,
+  scoring='acuracy',
+  cv=10
+  n_jobs=-1
+)
+
+# Fit 'grid_dt' to the training data
+
+grid_dt.fit(X_train,y_train)
+
+# Extract best hyperparameters from 'grid_dt'
+best_hyperparams = grid_dt.best_params_
+
+print('Best hyperparameters:\n',best_hyperparams)
+
+# Extract best CV score from 'grid_dt'
+best_CV_score = grid_dt.best_score_
+print('Best CV accuracy'.format(best_CV_score))
+
+# Extracting the best estimator
+best_model = grid_dt.best_estimator_
+
+# Evaluate test set accuracy
+test_acc = best_model.score(X_test,y_test)
+
+# Print test set accuracy
+print('Test set accuracy of best model: {:.3f}'.format(test_acc))
+
+```
+
+
+#### Exercice
+
+```python
+# Define params_dt
+params_dt = {
+    'max_depth': [2,3,4],
+    'min_samples_leaf': [0.12,0.14,0.16,0.18]
+}
+# Import GridSearchCV
+from sklearn.model_selection import GridSearchCV
+
+# Instantiate grid_dt
+grid_dt = GridSearchCV(estimator=dt,
+                       param_grid=params_dt,
+                       scoring='roc_auc',
+                       cv=5,
+                       n_jobs=-1)
+
+# Import roc_auc_score from sklearn.metrics
+from sklearn.metrics import roc_auc_score
+
+# Extract the best estimator
+best_model = grid_dt.best_estimator_
+
+# Predict the test set probabilities of the positive class
+y_pred_proba = grid_dt.predict_proba(X_test,)[:,1]
+
+# Compute test_roc_auc
+test_roc_auc = roc_auc_score(y_test,y_pred_proba)
+
+# Print test_roc_auc
+print('Test set ROC AUC score: {:.3f}'.format(test_roc_auc))
+
+```
+
+### RF Hyperparameters in sklean
+
+
+```python
+# Import RandomForest Regressor
+from sklearn.ensemble import RandomForestRegressor
+
+SEED = 1
+# Instantiate a random forests regressor 'rf'
+
+rf = RandomForestRegressor(random_state=SEED)
+
+# Inspect rf's hyperparameters
+
+rf.get_params()
+
+# Basic imports
+
+from sklearn.metrics import mean_squarred_error as MSE
+from sklearn.model_selection import GridSearchCV
+
+# define a grid of hyperparameters 'params_rf'
+
+params_rf = {
+  'n_estimators': [300,400,500],
+  'max_depth': [4,6,8],
+  'min_samples_leaf': [0.1,0.2],
+  'max_features': ['log2','sqrt']
+}
+# instanciate 'grid_rf'
+
+grid_rf = GridSearchCV(estimator=rf,
+  param_grid=params_rf,
+  cv=3,
+  scoring='neg_mean_squared_error',
+  verbose=1,
+  n_jobs=-1)
+
+# Fit 'grid_rf' to the training set
+grid_rf.fit(X_train,y_train)
+
+# Extract best hyperparamters from 'grid_rf'
+
+best_hyperparams = grid_rf.best_params_
+
+print('Best hyperparameters:\n',best_hyperparams)
+
+
+# Extract the best model from 'grid_rf'
+
+best_model = grid_rf.best_estimator_
+
+# Predict the test set labels
+
+y_pred = best_model.predict(X_test)
+
+# Evaluate the test set RMSE
+
+rmse_test = MSE(y_test,y_pred)**(1/2)
+
+print('Test set RMSE of rf: {:2.f}'.format(rmse_test))
+
+# Import mean_squared_error from sklearn.metrics as MSE 
+from sklearn.metrics import mean_squared_error as MSE
+
+# Import mean_squared_error from sklearn.metrics as MSE 
+from sklearn.metrics import mean_squared_error as MSE
+
+# Extract the best estimator
+best_model = grid_rf.best_estimator_
+
+# Predict test set labels
+y_pred = best_model.predict(X_test)
+
+# Compute rmse_test
+rmse_test = MSE(y_test,y_pred)**(1/2)
+
+# Print rmse_test
+print('Test RMSE of best model: {:.3f}'.format(rmse_test))
+
+
+```
+
+#### Exercice 
+
+```python
+# Define the dictionary 'params_rf'
+params_rf = {
+    'n_estimators': [100,350,500],
+    'max_features': ['log2','auto','sqrt'],
+    'min_samples_leaf': [2,10,30]
+}
+
+# Import GridSearchCV
+from sklearn.model_selection import GridSearchCV
+
+# Instantiate grid_rf
+grid_rf = GridSearchCV(estimator=rf,
+                       param_grid=params_rf,
+                       scoring='neg_mean_squared_error',
+                       cv=3,
+                       verbose=1,
+                       n_jobs=-1)
+```
